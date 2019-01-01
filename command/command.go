@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os/exec"
+
+	"github.com/muratsplat/mehmet/php"
 )
 
 type Worker interface {
@@ -15,16 +16,18 @@ type Worker interface {
 
 // PHP worker
 type PHP struct {
-	// Options
+	Path string
 }
 
-func NewPHP() Worker {
-	return &PHP{}
+func NewPHP(path string) Worker {
+	return &PHP{
+		Path: path,
+	}
 }
 
 func (p *PHP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
-	cmd := exec.Command("php", "hello.php")
+	cmd := exec.Command("php", "-r", php.EvalCode)
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
@@ -35,8 +38,6 @@ func (p *PHP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-
-	log.Println(string(byt))
 	go func() {
 		defer stdin.Close()
 		_, err := stdin.Write(byt)
@@ -50,7 +51,6 @@ func (p *PHP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	log.Printf("Out %s", out)
 	reader := bytes.NewBuffer(out)
 
 	_, err = io.Copy(w, reader)
