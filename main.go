@@ -11,11 +11,12 @@ import (
 )
 
 const (
-	host = "localhost"
+	host = ""
 	port = 8090
 )
 
 func init() {
+	log.Printf("Server is starting.\n")
 	flag.StringVar(&scriptPath, "path", "", "the path of script PHP file")
 	flag.IntVar(&givenPort, "port", port, "port number for serving the script")
 	flag.Parse()
@@ -28,7 +29,6 @@ func init() {
 		flag.Usage()
 		os.Exit(1)
 	}
-
 }
 
 var (
@@ -38,7 +38,7 @@ var (
 )
 
 func main() {
-
 	router := command.NewPHP(scriptPath)
+	log.Printf("%s listening...", addr)
 	log.Fatal(http.ListenAndServe(addr, router))
 }

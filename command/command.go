@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os/exec"
+	"time"
 
 	"github.com/muratsplat/mehmet/php"
 )
@@ -26,9 +28,9 @@ func NewPHP(path string) Worker {
 }
 
 func (p *PHP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-
-	cmd := exec.Command("php", "-r", php.EvalCode)
-
+	now := time.Now()
+	eval := php.NewPHPInject(r, p.Path)
+	cmd := exec.Command("php", "-r", eval.String())
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		panic(err)
@@ -48,13 +50,14 @@ func (p *PHP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
+		log.Printf("PHP error reason (%v)", string(out))
+		log.Printf("Execute Error:(%v)", err)
 		panic(err)
 	}
 
 	reader := bytes.NewBuffer(out)
-
 	_, err = io.Copy(w, reader)
-
+	log.Printf("PHP execution time: %s", time.Now().Sub(now).String())
 	if err != nil {
 		panic(err)
 	}
