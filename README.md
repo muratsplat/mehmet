@@ -5,6 +5,9 @@ This app can be used instead of `Nginx`+`PHP-FPM` or `Apache` + `PHP-Mod`.
 
 More details will be added....
 
+# Requiretments
+* PHP in  the `PATH` on your OS
+ 
 
 ## How to run
 ```sh
@@ -16,9 +19,9 @@ $ ./mehmet -path ~/code/personal/foo/public/index.php
 2019/01/06 00:13:24 PHP execution time: 164.773723ms
 2019/01/06 00:13:25 PHP execution time: 151.359473ms
 2019/01/06 00:13:25 PHP execution time: 101.984133ms
-
 ```
 
 ## TODO
  * Handling URL parameters
  * Handling POST request
+ * Serving static assets
