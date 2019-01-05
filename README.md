@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.com/muratsplat/mehmet.svg?branch=master)](https://travis-ci.com/muratsplat/mehmet)
 # Mehmet 
 This is simple http server to serve your PHP code to the World ! Dont waste your time to server your PHP application by doing a lot of configuration. 
 
