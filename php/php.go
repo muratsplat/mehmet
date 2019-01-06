@@ -3,20 +3,28 @@ package php
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"text/template"
 )
 
 type Server struct {
-	Protocol string `json:"SERVER_PROTOCOL"`
-	Method   string `json:"REQUEST_METHOD"`
-	URI      string `json:"REQUEST_URI"`
+	Protocol   string `json:"SERVER_PROTOCOL"`
+	Method     string `json:"REQUEST_METHOD"`
+	URI        string `json:"REQUEST_URI"`
+	Query      string `json:"QUERY_STRING"`
+	Server     string `json:"SERVER_SOFTWARE"`
+	ServerName string `json:"SERVER_NAME"`
+	Host       string `json:"HTTP_HOST"`
+	RemoteAddr string `json:"REMOTE_ADDR"`
+	RemotePort string `json:"REMOTE_PORT"`
 }
 
 type Inject struct {
-	JSON string
-	PATH string
+	Server    string
+	GlobalGET string
+	PATH      string
 }
 
 type PHPInject struct {
@@ -42,19 +50,29 @@ func (p *PHPInject) String() string {
 }
 
 func (p *PHPInject) Eval() (string, error) {
+	resolveRemoteAddr := ResolveRemoteAddr(p.Request.RemoteAddr)
+	// https://secure.php.net/manual/tr/reserved.variables.server.php
 	s := &Server{
-		Protocol: p.Request.Proto,
-		Method:   p.Request.Method,
-		URI:      p.Request.RequestURI,
+		RemoteAddr: resolveRemoteAddr.Ip,
+		RemotePort: resolveRemoteAddr.Port,
+		ServerName: p.Request.URL.Hostname(),
+		Host:       p.Request.Host,
+		Protocol:   p.Request.Proto,
+		Method:     p.Request.Method,
+		URI:        fmt.Sprintf("%s?%s", p.Request.URL.Path, p.Request.URL.RawQuery),
+		Query:      p.Request.URL.RawQuery,
+		Server:     "mehmet",
 	}
 
-	jsonInject, err := json.Marshal(s)
+	globalGet := p.Request.URL.RawQuery
+	serverInject, err := json.Marshal(s)
 	if err != nil {
 		return "", err
 	}
 
 	var inject Inject
-	inject.JSON = string(jsonInject)
+	inject.Server = string(serverInject)
+	inject.GlobalGET = globalGet
 	inject.PATH = p.PHPScriptPath
 
 	evil, err := GetEvil(inject)
@@ -80,11 +98,14 @@ func GetEvil(i Inject) (string, error) {
 
 // https://secure.php.net/manual/en/reserved.variables.server.php
 const evalCode = `
-$_MEHMET_INJECT = <<<JSON
-{{.JSON}}
+$_MEHMET_SERVER_INJECT = <<<JSON
+{{.Server}}
 JSON;
-$_MEHMET_SERVER = json_decode($_MEHMET_INJECT, true);
-unset($_MEHMET_INJECT);
+$_MEHMET_SERVER = json_decode($_MEHMET_SERVER_INJECT, true);
+unset($_MEHMET_SERVER_INJECT);
 $_SERVER = array_merge($_SERVER, $_MEHMET_SERVER);
 unset($_MEHMET_SERVER);
+parse_str("{{.GlobalGET}}", $_MEHMET_GET_INJECT);
+$_GET = array_merge($_GET, $_MEHMET_GET_INJECT);
+unset($_MEHMET_GET_INJECT);
 require_once("{{.PATH}}");`
