@@ -23,6 +23,6 @@ $ ./mehmet -path ~/code/personal/foo/public/index.php
 ```
 
 ## TODO
- * Handling URL parameters
+ * ~~Handling URL parameters~~
  * Handling POST request
  * Serving static assets
